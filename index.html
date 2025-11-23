@@ -1,116 +1,750 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Crypto & Forex & Stocks Heatmap Pro</title>
-    <link rel="stylesheet" href="style.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperliquid Whale Tracker - Real-Time</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%); 
+            color: #fff; 
+            min-height: 100vh; 
+            padding: 20px;
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+        }
+        
+        header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+            animation: fadeIn 0.6s ease-in;
+        }
+        
+        header h1 { 
+            font-size: 2.8rem; 
+            font-weight: 700; 
+            background: linear-gradient(45deg, #00d4ff, #5a67d8, #ff6ec7); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle { 
+            font-size: 1.1rem; 
+            opacity: 0.8; 
+            margin-bottom: 15px; 
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); 
+            gap: 24px; 
+            margin-bottom: 40px; 
+        }
+        
+        .card { 
+            background: rgba(255, 255, 255, 0.08); 
+            backdrop-filter: blur(20px); 
+            border-radius: 20px; 
+            padding: 24px; 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); 
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: all 0.3s ease;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 12px 48px rgba(0, 212, 255, 0.2);
+        }
+        
+        .card h2 { 
+            font-size: 1.4rem; 
+            margin-bottom: 20px; 
+            color: #00d4ff; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 12px;
+        }
+        
+        .metrics-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 16px; 
+        }
+        
+        .metric { 
+            text-align: center; 
+            padding: 16px; 
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+        
+        .metric:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .metric label { 
+            font-size: 0.85rem; 
+            opacity: 0.7; 
+            display: block; 
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .value { 
+            font-size: 1.8rem; 
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .value-small {
+            font-size: 1.2rem;
+        }
+        
+        .green { color: #10b981; } 
+        .red { color: #ef4444; }
+        .yellow { color: #f59e0b; }
+        
+        .table-container { 
+            max-height: 400px; 
+            overflow-y: auto;
+            border-radius: 12px;
+        }
+        
+        .table-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .table-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 4px;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+        }
+        
+        th, td { 
+            padding: 12px 16px; 
+            text-align: left; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        th { 
+            background: rgba(0, 212, 255, 0.15); 
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        tbody tr { 
+            transition: all 0.2s;
+        }
+        
+        tbody tr:hover { 
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.01);
+        }
+        
+        .action-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .action-long {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        
+        .action-short {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        #ratioChart { 
+            height: 250px; 
+            margin-bottom: 20px; 
+        }
+        
+        .ratio-bars { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 16px; 
+        }
+        
+        .bar-item { 
+            display: flex; 
+            align-items: center;
+            gap: 12px; 
+        }
+        
+        .bar-item span {
+            font-weight: 600;
+            min-width: 50px;
+            font-size: 0.9rem;
+        }
+        
+        .bar { 
+            flex: 1;
+            display: flex; 
+            height: 28px; 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 14px; 
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .fill { 
+            height: 100%; 
+            transition: width 0.8s ease;
+            display: flex; 
+            align-items: center; 
+            padding: 0 10px; 
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .fill.long {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: white;
+            justify-content: flex-start;
+        }
+        
+        .fill.short { 
+            background: linear-gradient(90deg, #dc2626, #ef4444);
+            color: white;
+            justify-content: flex-end;
+        }
+        
+        .price-card {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .price-item {
+            text-align: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+        }
+        
+        .price-label {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+        
+        .price-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+        
+        footer { 
+            text-align: center; 
+            opacity: 0.6; 
+            font-size: 0.85rem;
+            padding: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) { 
+            .grid { grid-template-columns: 1fr; } 
+            header h1 { font-size: 2rem; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .price-card { grid-template-columns: 1fr; }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Phân tích dữ liệu tài chính toàn diện</h1>
-            <div class="search-bar">
-                <input type="text" placeholder="Tìm kiếm coin, cặp Forex hoặc chỉ số..." id="searchInput">
-                <i class="fas fa-search"></i>
+            <h1><i class="fas fa-whale"></i> Hyperliquid Whale Tracker</h1>
+            <p class="subtitle">Theo dõi vị thế cá voi, PnL, funding & long/short ratios real-time</p>
+            <div class="status-bar">
+                <div class="status-item">
+                    <div class="status-dot"></div>
+                    <span id="last-update">Đang tải dữ liệu...</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Cập nhật mỗi 30s</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-database"></i>
+                    <span id="data-source">Hyperliquid DEX</span>
+                </div>
             </div>
         </header>
 
-        <div class="tabs">
-            <button class="tab active" data-tab="crypto">Crypto</button>
-            <button class="tab" data-tab="forex">Forex</button>
-            <button class="tab" data-tab="stocks">Chứng khoán Mỹ</button>
-            <button class="tab" data-tab="gainers">Tăng mạnh</button>
-            <button class="tab" data-tab="losers">Giảm mạnh</button>
-        </div>
+        <div class="grid">
+            <!-- Market Overview Card -->
+            <section class="card">
+                <h2><i class="fas fa-chart-line"></i> Tổng Quan Thị Trường</h2>
+                <div class="price-card">
+                    <div class="price-item">
+                        <div class="price-label">Giá Hiện Tại</div>
+                        <div class="price-value" id="current-price">$0</div>
+                    </div>
+                    <div class="price-item">
+                        <div class="price-label">Cao 24h</div>
+                        <div class="price-value green" id="high-24h">$0</div>
+                    </div>
+                    <div class="price-item">
+                        <div class="price-label">Thấp 24h</div>
+                        <div class="price-value red" id="low-24h">$0</div>
+                    </div>
+                </div>
+                <div class="metrics-grid" style="margin-top: 16px;">
+                    <div class="metric">
+                        <label>Khối lượng 24h</label>
+                        <div class="value value-small yellow">$<span id="volume-24h">0</span>M</div>
+                    </div>
+                    <div class="metric">
+                        <label>Thay đổi 24h</label>
+                        <div class="value value-small" id="change-24h">0%</div>
+                    </div>
+                </div>
+            </section>
 
-        <div class="table-container">
-            <table id="cryptoTable">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Ký hiệu</th>
-                        <th>Giá</th>
-                        <th>24h%</th>
-                        <th>Funding Rate</th>
-                        <th>Khối lượng (24h)</th>
-                        <th>Vốn hóa</th>
-                        <th>Open Interest</th>
-                        <th>OI (24h%)</th>
-                        <th>Thanh lý (24h)</th>
-                    </tr>
-                </thead>
-                <tbody id="cryptoBody"></tbody>
-            </table>
+            <!-- Positions & PnL Card -->
+            <section class="card">
+                <h2><i class="fas fa-balance-scale"></i> Vị Thế Cá Voi</h2>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <label>Long Position</label>
+                        <div class="value green">$<span id="long-pos">0</span>B</div>
+                    </div>
+                    <div class="metric">
+                        <label>Short Position</label>
+                        <div class="value red">$<span id="short-pos">0</span>B</div>
+                    </div>
+                    <div class="metric">
+                        <label>Long PnL</label>
+                        <div class="value green">$<span id="long-pnl">0</span>M</div>
+                    </div>
+                    <div class="metric">
+                        <label>Short PnL</label>
+                        <div class="value red">$<span id="short-pnl">0</span>M</div>
+                    </div>
+                </div>
+            </section>
 
-            <table id="forexTable" style="display:none;">
-                <thead>
-                    <tr>
-                        <th>Cặp</th>
-                        <th>Giá</th>
-                        <th>Thay đổi 24h</th>
-                        <th>Thay đổi %</th>
-                        <th>High 24h</th>
-                        <th>Low 24h</th>
-                        <th>Khối lượng</th>
-                    </tr>
-                </thead>
-                <tbody id="forexBody"></tbody>
-            </table>
+            <!-- Funding Fees Card -->
+            <section class="card">
+                <h2><i class="fas fa-dollar-sign"></i> Funding Fees</h2>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <label>Long Funding (Paid)</label>
+                        <div class="value red">-$<span id="long-funding">0</span>M</div>
+                    </div>
+                    <div class="metric">
+                        <label>Short Funding (Earned)</label>
+                        <div class="value green">+$<span id="short-funding">0</span>M</div>
+                    </div>
+                    <div class="metric">
+                        <label>Funding Rate</label>
+                        <div class="value yellow"><span id="funding-rate">0</span>%</div>
+                    </div>
+                    <div class="metric">
+                        <label>Next Funding</label>
+                        <div class="value value-small" id="next-funding">--:--:--</div>
+                    </div>
+                </div>
+            </section>
 
-            <table id="stocksTable" style="display:none;">
-                <thead>
-                    <tr>
-                        <th>Chỉ số</th>
-                        <th>Giá</th>
-                        <th>Thay đổi</th>
-                        <th>Thay đổi %</th>
-                        <th>High 24h</th>
-                        <th>Low 24h</th>
-                        <th>Khối lượng</th>
-                    </tr>
-                </thead>
-                <tbody id="stocksBody"></tbody>
-            </table>
-        </div>
-
-        <!-- Modal Chi Tiết (cho Crypto & Stocks, Forex đơn giản) -->
-        <div id="coinModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="coin-info-header">
-                        <img id="modalImage" src="" alt="">
-                        <div>
-                            <h2 id="modalName">Bitcoin</h2>
-                            <p id="modalSymbol">BTC</p>
+            <!-- Long/Short Ratios Chart -->
+            <section class="card" style="grid-column: span 2;">
+                <h2><i class="fas fa-chart-pie"></i> Long/Short Trader Ratio</h2>
+                <canvas id="ratioChart"></canvas>
+                <div class="ratio-bars">
+                    <div class="bar-item">
+                        <span>BTC</span>
+                        <div class="bar">
+                            <div class="fill long" id="btc-long">0%</div>
+                            <div class="fill short" id="btc-short">0%</div>
                         </div>
                     </div>
-                    <span class="close">×</span>
-                </div>
-                <div class="modal-body">
-                    <div class="chart-container">
-                        <canvas id="priceChart"></canvas>
+                    <div class="bar-item">
+                        <span>ETH</span>
+                        <div class="bar">
+                            <div class="fill long" id="eth-long">0%</div>
+                            <div class="fill short" id="eth-short">0%</div>
+                        </div>
                     </div>
-                    <div class="stats-grid">
-                        <div class="stat"><span>Giá hiện tại</span><strong id="modalPrice">$0</strong></div>
-                        <div class="stat"><span>Thay đổi 24h</span><strong id="modalChange" class="positive">0%</strong></div>
-                        <div class="stat"><span>Vốn hóa / Khối lượng</span><strong id="modalMarketCap">$0</strong></div>
-                        <div class="stat"><span>Open Interest / High</span><strong id="modalOI">$0</strong></div>
-                        <div class="stat"><span>Funding Rate / Low</span><strong id="modalFunding">0%</strong></div>
-                        <div class="stat"><span>OI 24h% / Vol</span><strong id="modalVolume">0%</strong></div>
+                    <div class="bar-item">
+                        <span>SOL</span>
+                        <div class="bar">
+                            <div class="fill long" id="sol-long">0%</div>
+                            <div class="fill short" id="sol-short">0%</div>
+                        </div>
+                    </div>
+                    <div class="bar-item">
+                        <span>XRP</span>
+                        <div class="bar">
+                            <div class="fill long" id="xrp-long">0%</div>
+                            <div class="fill short" id="xrp-short">0%</div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- Whale Activity Table -->
+            <section class="card" style="grid-column: span 2;">
+                <h2><i class="fas fa-list-ul"></i> Hoạt Động Cá Voi Mới Nhất</h2>
+                <div class="table-container">
+                    <table id="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Thời Gian</th>
+                                <th>Cặp</th>
+                                <th>Hành Động</th>
+                                <th>Kích Thước</th>
+                                <th>Giá</th>
+                                <th>Tổng Giá Trị</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" class="loading"><i class="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
 
         <footer>
-            <p>© 2025 Crypto & Forex & Stocks Heatmap Pro • Cập nhật tự động từ CoinGecko, ExchangeRate-API & Alpha Vantage</p>
+            <p><i class="fas fa-info-circle"></i> © 2025 Hyperliquid Whale Tracker • Dữ liệu mô phỏng cho mục đích demo</p>
+            <p style="margin-top: 8px; font-size: 0.75rem;">Để kết nối API thực, cần tích hợp với Hyperliquid WebSocket hoặc CoinGlass API</p>
         </footer>
     </div>
 
-    <script src="script.js"></script>
-</body>
-</html>
+    <script>
+        // ============================================
+        // DATA SERVICE - Quản lý dữ liệu thị trường
+        // ============================================
+        class MarketDataService {
+            constructor() {
+                this.basePrice = 95000; // BTC base price
+                this.priceHistory = [];
+                this.initializeData();
+            }
+
+            initializeData() {
+                // Khởi tạo historical data
+                for (let i = 0; i < 20; i++) {
+                    this.priceHistory.push(this.generateRealisticPrice());
+                }
+            }
+
+            generateRealisticPrice() {
+                // Tạo giá dao động realistic ±2%
+                const variance = (Math.random() - 0.5) * 0.04;
+                this.basePrice = this.basePrice * (1 + variance);
+                return Math.round(this.basePrice * 100) / 100;
+            }
+
+            getMarketOverview() {
+                const currentPrice = this.generateRealisticPrice();
+                const high24h = Math.max(...this.priceHistory);
+                const low24h = Math.min(...this.priceHistory);
+                const oldPrice = this.priceHistory[0];
+                const change24h = ((currentPrice - oldPrice) / oldPrice * 100).toFixed(2);
+                const volume24h = (Math.random() * 5000 + 15000).toFixed(0);
+
+                return {
+                    currentPrice: currentPrice.toLocaleString('en-US'),
+                    high24h: high24h.toLocaleString('en-US'),
+                    low24h: low24h.toLocaleString('en-US'),
+                    volume24h,
+                    change24h,
+                    changeClass: change24h >= 0 ? 'green' : 'red'
+                };
+            }
+
+            getWhalePositions() {
+                return {
+                    longPos: (Math.random() * 3 + 8).toFixed(2),
+                    shortPos: (Math.random() * 2 + 5).toFixed(2),
+                    longPnl: (Math.random() * 50 + 150).toFixed(0),
+                    shortPnl: (Math.random() * 30 + 80).toFixed(0),
+                    longFunding: (Math.random() * 5 + 10).toFixed(1),
+                    shortFunding: (Math.random() * 4 + 8).toFixed(1),
+                    fundingRate: (Math.random() * 0.02 + 0.01).toFixed(4)
+                };
+            }
+
+            getWhaleActivity() {
+                const pairs = ['BTC/USD', 'ETH/USD', 'SOL/USD', 'XRP/USD', 'AVAX/USD'];
+                const actions = ['Long', 'Short'];
+                const activity = [];
+
+                for (let i = 0; i < 15; i++) {
+                    const pair = pairs[Math.floor(Math.random() * pairs.length)];
+                    const action = actions[Math.floor(Math.random() * actions.length)];
+                    const size = (Math.random() * 500 + 100).toFixed(2);
+                    const price = this.generateRealisticPrice();
+                    const total = (parseFloat(size) * price / 1000).toFixed(1);
+                    const time = new Date(Date.now() - Math.random() * 3600000);
+
+                    activity.push({
+                        time: time.toLocaleTimeString('vi-VN'),
+                        pair,
+                        action,
+                        size,
+                        price: price.toLocaleString('en-US'),
+                        total: `$${total}K`
+                    });
+                }
+
+                return activity;
+            }
+
+            getLongShortRatios() {
+                return {
+                    btc: { long: Math.random() * 30 + 45, short: 0 },
+                    eth: { long: Math.random() * 25 + 50, short: 0 },
+                    sol: { long: Math.random() * 30 + 40, short: 0 },
+                    xrp: { long: Math.random() * 35 + 35, short: 0 }
+                };
+            }
+
+            getNextFundingTime() {
+                const now = new Date();
+                const minutes = now.getMinutes();
+                const nextHour = new Date(now);
+                nextHour.setHours(now.getHours() + 1, 0, 0, 0);
+                const diff = nextHour - now;
+                const hours = Math.floor(diff / 3600000);
+                const mins = Math.floor((diff % 3600000) / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+                return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+
+        // ============================================
+        // UI CONTROLLER - Quản lý giao diện
+        // ============================================
+        class UIController {
+            constructor(dataService) {
+                this.dataService = dataService;
+                this.ratioChart = null;
+                this.initChart();
+            }
+
+            initChart() {
+                const ctx = document.getElementById('ratioChart').getContext('2d');
+                this.ratioChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: 'BTC Long %',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2
+                        }, {
+                            label: 'ETH Long %',
+                            data: [],
+                            borderColor: '#5a67d8',
+                            backgroundColor: 'rgba(90, 103, 216, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { color: '#fff', font: { size: 12 } }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: { color: '#fff', callback: (value) => value + '%' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            },
+                            x: {
+                                ticks: { color: '#fff' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            updateMarketOverview(data) {
+                document.getElementById('current-price').textContent = '$' + data.currentPrice;
+                document.getElementById('high-24h').textContent = '$' + data.high24h;
+                document.getElementById('low-24h').textContent = '$' + data.low24h;
+                document.getElementById('volume-24h').textContent = data.volume24h;
+                
+                const changeEl = document.getElementById('change-24h');
+                changeEl.textContent = (data.change24h >= 0 ? '+' : '') + data.change24h + '%';
+                changeEl.className = 'value value-small ' + data.changeClass;
+            }
+
+            updatePositions(data) {
+                document.getElementById('long-pos').textContent = data.longPos;
+                document.getElementById('short-pos').textContent = data.shortPos;
+                document.getElementById('long-pnl').textContent = data.longPnl;
+                document.getElementById('short-pnl').textContent = data.shortPnl;
+                document.getElementById('long-funding').textContent = data.longFunding;
+                document.getElementById('short-funding').textContent = data.shortFunding;
+                document.getElementById('funding-rate').textContent = data.fundingRate;
+            }
+
+            updateActivity(activities) {
+                const tbody = document.querySelector('#activity-table tbody');
+                tbody.innerHTML = activities.map(row => `
+                    <tr>
+                        <td>${row.time}</td>
+                        <td><strong>${row.pair}</strong></td>
+                        <td><span class="action-badge action-${row.action.toLowerCase()}">${row.action}</span></td>
+                        <td>${row.size} BTC</td>
+                        <td>$${row.price}</td>
+                        <td><strong>${row.total}</strong></td>
+                    </tr>
+                `).join('');
+            }
+
+            updateRatios(ratios) {
+                // Update bars
+                Object.keys(ratios).forEach(coin => {
+                    const longPercent = ratios[coin].long;
+                    const shortPercent = 100 - longPercent;
+                    
+                    const longEl = document.getElementById(`${coin}-long`);
+                    const shortEl = document.getElementById(`${coin}-short`);
+                    
+                    longEl.style.width = longPercent + '%';
+                    longEl.textContent = longPercent.toFixed(1) + '%';
+                    shortEl.style.width = shortPercent + '%';
+                    shortEl.textContent = shortPercent.toFixed(1) + '%';
+                });
+
+                // Update chart
+                const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                if (this.ratioChart.data.labels.length > 20) {
+                    this.ratioChart.data.labels.shift();
+                    this.ratioChart.data.datasets[0].data.shift();
+                    this.ratioChart.data.datasets[1].data.shift();
+                }
+                
+                this.ratioChart.data.labels.push(now);
+                this.ratioChart.data.datasets[0].data.push(ratios.btc.long);
+                this.ratioChart.data.datasets[1].data.push(ratios.eth.long);
+                this.ratioChart.update('none');
+            }
+
+            updateTimestamp() {
+                const now = new Date().toLocaleString('vi-VN', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                document.getElementById('last-update').innerHTML = `<i class="fas fa-check-circle"></i> Cập nhật: ${now}`;
+            }
+
+            updateNextFunding(time) {
+                document.getElementById('next-funding').textContent = time;
+            }
+        }
+
+        // ============
